@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>รายชื่อนักเรียน - ระบบน้ำหนักส่วนสูง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        .triangle-corner {
+            position: absolute; top: 0; right: 0; width: 0; height: 0;
+            border-top: 45px solid transparent; border-left: 45px solid transparent; border-top-right-radius: 0.75rem; 
+        }
+        .sno-text { position: absolute; top: 4px; right: 6px; color: white; font-size: 14px; font-weight: bold; z-index: 10; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <div id="main-view" class="max-w-md mx-auto bg-gray-50 min-h-screen shadow-md relative">
+        <div class="bg-blue-600 text-white p-4 rounded-b-3xl shadow-lg relative z-10">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center space-x-3">
+                    <img src="https://img2.pic.in.th/4d3a830f3eb506411.png" class="w-10 h-10 bg-white rounded-full p-1 shadow">
+                    <div>
+                        <p class="text-sm text-blue-200" id="record-period">ประจำเดือน...</p>
+                        <p id="list-teacher-profile" class="font-bold text-lg leading-tight">กำลังตรวจสอบข้อมูล...</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="text-[10px] font-bold bg-white text-blue-700 px-3 py-1.5 rounded-full shadow hover:bg-blue-50 transition">ออกจากระบบ</button>
+            </div>
+            <div class="mt-4 bg-white bg-opacity-20 p-3 rounded-xl border border-white border-opacity-30 backdrop-blur-sm text-center">
+                <h2 class="text-lg font-bold">รายชื่อนักเรียนในที่ปรึกษา</h2>
+            </div>
+        </div>
+
+        <div class="px-4 -mt-3 relative z-20">
+            <div class="bg-white p-4 rounded-2xl shadow-lg border border-gray-100 text-center">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">ความคืบหน้าการบันทึกข้อมูล</p>
+                <div class="my-1 flex items-baseline justify-center space-x-2">
+                    <span id="progressPercent" class="text-5xl font-black text-blue-600 tracking-tighter">0%</span>
+                </div>
+                <p class="text-[11px] font-medium text-gray-500 mb-3">
+                    บันทึกแล้ว <span id="recordedCount" class="font-bold text-gray-800 text-sm">0</span> จาก <span id="totalCount" class="font-bold text-gray-800 text-sm">0</span> คน
+                </p>
+
+                <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div id="progressBar" class="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="studentListContainer" class="px-4 mt-4 space-y-3 pb-24"></div>
+    </div>
+
+    <script>
+        // อัปเดต URL ใหม่
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzTh56DQWZ5J2pcrUFFgv9qF_vYISHAooCny1JADySXvtZv_AZ2NXyiJ82eIv3rncTcZQ/exec";
+        
+        let globalTeacherRoom = "";
+        let globalTeacherName = "";
+        let globalTerm = "";
+        let globalMonth = "";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            globalTeacherRoom = urlParams.get('room');
+            globalTeacherName = urlParams.get('tname');
+            globalTerm = urlParams.get('term');
+            globalMonth = urlParams.get('month');
+
+            if (!globalTeacherRoom || !globalTerm || !globalMonth) {
+                window.location.href = GAS_WEB_APP_URL; 
+                return;
+            } 
+            
+            document.getElementById('list-teacher-profile').innerText = `${globalTeacherName} (ห้อง ${globalTeacherRoom})`;
+            document.getElementById('record-period').innerText = `เดือน${globalMonth} (ภาคเรียน ${globalTerm})`;
+            fetchStudents();
+        });
+
+        function fetchStudents() {
+            // สั่งโหลดหน้าจอชั่วคราว
+            const container = document.getElementById('studentListContainer');
+            container.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold"><i class="fa-solid fa-spinner fa-spin text-3xl mb-2"></i><br>กำลังโหลดข้อมูลนักเรียน...</div>';
+
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                // หมายเหตุ: โค้ดฝั่ง Server (Code.gs) ต้องเขียนรองรับ action: "getStudentsByRoom"
+                body: JSON.stringify({ action: "getStudentsByRoom", room: globalTeacherRoom, term: globalTerm, month: globalMonth }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    renderStudentList(result.data);
+                } else {
+                    Swal.fire('ข้อผิดพลาด', 'ดึงข้อมูลล้มเหลว: ' + result.message, 'error');
+                }
+            }).catch(err => { 
+                container.innerHTML = `<div class="bg-red-50 text-red-500 p-4 rounded-xl text-center text-sm font-bold">เกิดข้อผิดพลาดในการเชื่อมต่อ</div>`;
+            });
+        }
+
+        function renderStudentList(students) {
+            const container = document.getElementById('studentListContainer');
+            container.innerHTML = '';
+            
+            const total = students ? students.length : 0;
+            // ตัวแปร isRecorded สมมติว่าฝั่ง backend ส่งกลับมาเพื่อเช็คว่าเดือนนี้บันทึกหรือยัง
+            const recorded = students ? students.filter(s => s.isRecorded).length : 0; 
+            const percent = total > 0 ? Math.round((recorded / total) * 100) : 0;
+
+            document.getElementById('totalCount').innerText = total;
+            document.getElementById('recordedCount').innerText = recorded;
+            document.getElementById('progressPercent').innerText = percent + "%";
+            document.getElementById('progressBar').style.width = percent + "%";
+            
+            if(!students || students.length === 0) {
+                container.innerHTML = `<div class="bg-red-50 border border-red-200 p-4 rounded-xl text-center"><p class="text-red-500 font-bold text-sm">ไม่พบข้อมูลรายชื่อนักเรียนห้อง ${globalTeacherRoom}</p></div>`;
+                return;
+            }
+
+            students.forEach(student => {
+                const card = document.createElement("div");
+                const isRecorded = student.isRecorded;
+                
+                let borderClass = isRecorded ? "border-2 border-green-400 bg-green-50" : "border border-gray-200 bg-white";
+                let triangleColor = isRecorded ? "border-top-color: #22c55e;" : "border-top-color: #9ca3af;";
+                let statusBadge = isRecorded 
+                    ? `<span class="absolute bottom-2 right-3 bg-green-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">✔️ บันทึกแล้ว</span>` 
+                    : `<span class="absolute bottom-2 right-3 bg-gray-400 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">⏳ รอระบุข้อมูล</span>`;
+
+                card.className = `p-4 rounded-xl shadow relative overflow-hidden active:scale-95 transition-transform cursor-pointer ${borderClass}`;
+                
+                card.addEventListener('click', () => {
+                    const targetUrl = `${GAS_WEB_APP_URL}?page=form&sid=${encodeURIComponent(String(student.sid || ''))}&room=${encodeURIComponent(String(globalTeacherRoom || ''))}&tname=${encodeURIComponent(String(globalTeacherName || ''))}&term=${encodeURIComponent(globalTerm)}&month=${encodeURIComponent(globalMonth)}&fullname=${encodeURIComponent(student.fullname || '')}&sno=${encodeURIComponent(String(student.sno || ''))}`;
+                    window.location.href = targetUrl;
+                });
+
+                card.innerHTML = `
+                    <div class="triangle-corner" style="${triangleColor} border-top-width: 45px; border-left-width: 45px;"></div>
+                    <div class="sno-text">${student.sno}</div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-200 text-blue-600 shadow-sm opacity-80">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800 text-base leading-tight">${student.fullname}</p>
+                            <p class="text-xs text-gray-500 mt-1">รหัส: ${student.sid}</p>
+                        </div>
+                    </div>
+                    ${statusBadge}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("weightRecordUser");
+            window.location.href = GAS_WEB_APP_URL;
+        }
+    </script>
+</body>
+</html>
