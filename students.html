@@ -46,6 +46,19 @@
             </div>
         </div>
 
+        <div id="adminPanel" class="hidden px-4 mt-3">
+            <div class="bg-purple-100 border border-purple-300 p-3 rounded-xl shadow-sm flex justify-between items-center">
+                <div>
+                    <p class="text-sm font-bold text-purple-800"><i class="fa-solid fa-unlock-keyhole"></i> เปิดระบบกรณีพิเศษ</p>
+                    <p class="text-[10px] text-purple-600">อนุญาตให้ทุกคนบันทึกข้อมูลนอกเวลาได้</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="overrideToggle" class="sr-only peer" onchange="handleToggleOverride()">
+                    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+            </div>
+        </div>
+
         <div class="px-4 mt-3 relative z-20">
             <div class="bg-white p-4 rounded-2xl shadow border border-gray-100 text-center">
                 <div class="flex justify-between items-center mb-2">
@@ -96,12 +109,7 @@
             document.getElementById('list-teacher-profile').innerText = `${globalTeacherName} (ห้อง ${globalTeacherRoom})`;
             document.getElementById('record-period').innerText = `เดือน${globalMonth} (ภาคเรียน ${globalTerm})`;
 
-            // ตรวจสอบวันที่เพื่อทำ Read-only
-            const today = new Date().getDate();
-            if (today < 16) {
-                isReadOnly = true;
-                document.getElementById('readonlyBanner').classList.remove('hidden');
-            }
+
 
             fetchStudents();
         });
@@ -117,7 +125,25 @@
             })
             .then(res => res.json())
             .then(result => {
-                if (result.status === 'success') { renderStudentList(result.data); } 
+                if (result.status === 'success') { 
+                    // ตรวจสอบสิทธิ์ผู้ดูแลระบบ
+                    if (globalTeacherName === "นายพีระศิน ไชยศร") {
+                        document.getElementById('adminPanel').classList.remove('hidden');
+                        document.getElementById('overrideToggle').checked = result.override;
+                    }
+
+                    // ตรวจสอบวันที่เพื่อทำ Read-only (แต่ถ้า override ถูกเปิดอยู่ให้ข้ามการล็อก)
+                    const today = new Date().getDate();
+                    if (today < 16 && !result.override) {
+                        isReadOnly = true;
+                        document.getElementById('readonlyBanner').classList.remove('hidden');
+                    } else {
+                        isReadOnly = false;
+                        document.getElementById('readonlyBanner').classList.add('hidden');
+                    }
+
+                    renderStudentList(result.data); 
+                } 
                 else { Swal.fire('ข้อผิดพลาด', result.message, 'error'); }
             }).catch(err => { container.innerHTML = `<div class="bg-red-50 text-red-500 p-4 rounded-xl text-center text-sm font-bold">เชื่อมต่อล้มเหลว</div>`; });
         }
@@ -349,6 +375,41 @@
             setTimeout(() => modal.classList.add('hidden'), 300); // รอ animation จบ
         }
 
+async function handleToggleOverride() {
+            const toggle = document.getElementById('overrideToggle');
+            const state = toggle.checked;
+            toggle.disabled = true;
+            
+            try {
+                const res = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "toggleOverride", teacherName: globalTeacherName, state: state }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                const result = await res.json();
+                
+                if (result.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: state ? 'เปิดระบบสำเร็จ' : 'ปิดระบบสำเร็จ',
+                        text: state ? 'ผู้ใช้ทุกคนสามารถบันทึกข้อมูลได้แล้ว' : 'ระบบกลับสู่โหมดเวลาปกติ',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        fetchStudents(); // โหลดข้อมูลรายชื่อใหม่เพื่อปลดล็อกฟอร์มทันที
+                    });
+                } else {
+                    Swal.fire('ข้อผิดพลาด', result.message, 'error');
+                    toggle.checked = !state;
+                }
+            } catch(e) {
+                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อได้', 'error');
+                toggle.checked = !state;
+            } finally {
+                toggle.disabled = false;
+            }
+        }
+        
         function handleLogout() {
             localStorage.removeItem("weightRecordUser");
             window.location.href = 'index.html';
