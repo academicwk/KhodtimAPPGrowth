@@ -161,16 +161,23 @@
                 const readonlyAttr = isReadOnly ? "readonly" : "";
                 const saveBtnClass = isReadOnly ? "hidden" : "flex";
 
+                // จัดการรูปโปรไฟล์ (ถ้าไม่มีข้อมูลในชีท ให้ใช้รูป Default และมีระบบดัก Error รูปเสีย)
+                const profileImg = student.photo ? student.photo : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                const imgBorder = isRec ? "border-green-400" : "border-gray-200";
+
                 card.innerHTML = `
-                    <div class="flex justify-between items-start border-b border-gray-100 pb-2 mb-3">
-                        <div class="flex items-center gap-2">
-                            <div class="w-7 h-7 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-xs">${student.sno}</div>
+                    <div class="flex justify-between items-start border-b border-gray-100 pb-3 mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <img src="${profileImg}" alt="Profile" class="w-12 h-12 rounded-full object-cover border-2 ${imgBorder} shadow-sm" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                                <div class="absolute -bottom-1 -right-1 bg-blue-100 text-blue-700 border border-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-sm">${student.sno}</div>
+                            </div>
                             <div>
-                                <p class="font-bold text-gray-800 text-sm">${student.fullname} ${badgeHtml}</p>
-                                <p class="text-[10px] text-gray-500">รหัส: ${student.sid}</p>
+                                <p class="font-bold text-gray-800 text-sm leading-tight">${student.fullname} ${badgeHtml}</p>
+                                <p class="text-[10px] text-gray-500 mt-0.5">รหัส: ${student.sid}</p>
                             </div>
                         </div>
-                        <button onclick="openHistoryModal('${student.sid}', '${student.fullname}')" class="text-gray-400 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 p-2 rounded-lg transition" title="ดูประวัติ">
+                        <button onclick="openHistoryModal('${student.sid}', '${student.fullname}')" class="text-gray-400 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 w-8 h-8 rounded-lg transition flex items-center justify-center shrink-0 shadow-sm" title="ดูประวัติ">
                             <i class="fa-solid fa-clock-rotate-left"></i>
                         </button>
                     </div>
