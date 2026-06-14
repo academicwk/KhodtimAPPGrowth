@@ -49,24 +49,16 @@
 <script>
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzTh56DQWZ5J2pcrUFFgv9qF_vYISHAooCny1JADySXvtZv_AZ2NXyiJ82eIv3rncTcZQ/exec";
 
-    // ฟังก์ชันตรวจสอบสิทธิ์ช่วงวันที่ 16-สิ้นเดือน และคำนวณข้อมูลเวลาอัตโนมัติ
+// คำนวณข้อมูลเวลาอัตโนมัติ (อนุญาตให้เข้าระบบได้ตลอดเวลา)
     function getSystemPeriod() {
       const now = new Date();
-      const date = now.getDate();
-      
-      // ตรวจสอบเงื่อนไขข้อจำกัดวันที่ 16 ถึง วันสุดท้ายของเดือน
-      if (date < 16) {
-        return { allowed: false };
-      }
-      
       const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
       const monthName = months[now.getMonth()];
       
       const currentYearBE = now.getFullYear() + 543;
       let term = "";
-      const m = now.getMonth(); // 0 = ม.ค., 11 = ธ.ค.
+      const m = now.getMonth(); 
       
-      // คำนวณภาคเรียนอัตโนมัติ (พฤษภาคม - ตุลาคม = เทอม 1 | พฤศจิกายน - เมษายน = เทอม 2)
       if (m >= 4 && m <= 9) {
         term = "1/" + currentYearBE;
       } else {
@@ -74,7 +66,7 @@
         term = "2/" + termYear;
       }
       
-      return { allowed: true, term: term, month: monthName };
+      return { term: term, month: monthName };
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -86,12 +78,6 @@
       if (storedUser) {
         try {
           const period = getSystemPeriod();
-          // หากไม่อยู่ในช่วงวันที่กำหนด ให้ล้างระบบล็อกอินอัตโนมัติเพื่อป้องกันการแอบบันทึกข้อมูล خارج เวลา
-          if (!period.allowed) {
-            localStorage.removeItem("weightRecordUser");
-            return;
-          }
-
           const u = JSON.parse(storedUser);
           const response = await fetch(GAS_WEB_APP_URL, {
             method: 'POST', 
@@ -116,12 +102,7 @@
 
       if(!user || !pass) { Swal.fire("แจ้งเตือน", "กรุณากรอกข้อมูลให้ครบถ้วน", "warning"); return; }
 
-      // ตรวจสอบเงื่อนไขข้อจำกัดเวลาบันทึกข้อมูลก่อนทำรายการเข้าสู่ระบบ
       const period = getSystemPeriod();
-      if (!period.allowed) {
-        Swal.fire("ปฏิเสธการเข้าถึง", "ระบบเปิดให้บันทึกข้อมูลเฉพาะในช่วงวันที่ 16 ถึงวันสุดท้ายของเดือนเท่านั้นครับ", "warning");
-        return;
-      }
 
       try {
         const response = await fetch(GAS_WEB_APP_URL, {
