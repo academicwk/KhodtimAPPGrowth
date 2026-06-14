@@ -114,7 +114,7 @@
         if (result.status === "success") {
           localStorage.setItem("weightRecordUser", JSON.stringify({username: user, password: pass}));
           Swal.fire({ title: 'สำเร็จ!', text: 'เข้าสู่ระบบเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => {
-              window.location.href = `${GAS_WEB_APP_URL}?page=students&room=${encodeURIComponent(result.teacherRoom)}&tname=${encodeURIComponent(result.teacherName)}&term=${encodeURIComponent(period.term)}&month=${encodeURIComponent(period.month)}`;
+              window.location.href = `students.html?room=${encodeURIComponent(result.teacherRoom)}&tname=${encodeURIComponent(result.teacherName)}&term=${encodeURIComponent(period.term)}&month=${encodeURIComponent(period.month)}`;
           });
         } else { Swal.fire("ข้อผิดพลาด", result.message, "error"); }
       } catch (error) { Swal.fire("ข้อผิดพลาด", "เชื่อมต่อฐานข้อมูลไม่สำเร็จ", "error"); }
