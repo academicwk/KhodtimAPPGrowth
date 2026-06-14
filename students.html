@@ -135,7 +135,7 @@
                 card.className = `p-4 rounded-xl shadow relative overflow-hidden active:scale-95 transition-transform cursor-pointer ${borderClass}`;
                 
                 card.addEventListener('click', () => {
-                    const targetUrl = `${GAS_WEB_APP_URL}?page=form&sid=${encodeURIComponent(String(student.sid || ''))}&room=${encodeURIComponent(String(globalTeacherRoom || ''))}&tname=${encodeURIComponent(String(globalTeacherName || ''))}&term=${encodeURIComponent(globalTerm)}&month=${encodeURIComponent(globalMonth)}&fullname=${encodeURIComponent(student.fullname || '')}&sno=${encodeURIComponent(String(student.sno || ''))}`;
+                    const targetUrl = `form.html?sid=${encodeURIComponent(String(student.sid || ''))}&room=${encodeURIComponent(String(globalTeacherRoom || ''))}&tname=${encodeURIComponent(String(globalTeacherName || ''))}&term=${encodeURIComponent(globalTerm)}&month=${encodeURIComponent(globalMonth)}&fullname=${encodeURIComponent(student.fullname || '')}&sno=${encodeURIComponent(String(student.sno || ''))}`;
                     window.location.href = targetUrl;
                 });
 
@@ -162,7 +162,7 @@
 
         function handleLogout() {
             localStorage.removeItem("weightRecordUser");
-            window.location.href = GAS_WEB_APP_URL;
+            window.location.href = 'index.html';
         }
     </script>
 </body>
