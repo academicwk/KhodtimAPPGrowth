@@ -86,7 +86,7 @@
           });
           const result = await response.json();
           if (result.status === "success") {
-            window.location.href = `${GAS_WEB_APP_URL}?page=students&room=${encodeURIComponent(result.teacherRoom)}&tname=${encodeURIComponent(result.teacherName)}&term=${encodeURIComponent(period.term)}&month=${encodeURIComponent(period.month)}`;
+            window.location.href = `students.html?room=${encodeURIComponent(result.teacherRoom)}&tname=${encodeURIComponent(result.teacherName)}&term=${encodeURIComponent(period.term)}&month=${encodeURIComponent(period.month)}`;
           } else {
             localStorage.removeItem("weightRecordUser");
           }
