@@ -34,38 +34,9 @@
           <label class="block text-gray-700 text-xs font-bold mb-1">ชื่อผู้ใช้ (Username)</label>
           <input type="text" id="username" class="w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
         </div>
-        <div class="mb-3">
+        <div class="mb-5">
           <label class="block text-gray-700 text-xs font-bold mb-1">รหัสผ่าน (Password)</label>
           <input type="password" id="password" class="w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-        </div>
-
-        <div class="grid grid-cols-2 gap-2 mb-5">
-          <div>
-            <label class="block text-gray-700 text-xs font-bold mb-1">ภาคเรียน/ปีการศึกษา</label>
-            <select id="term" class="w-full px-2 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs font-bold bg-gray-50 text-blue-900">
-              <option value="1/2569">1/2569</option>
-              <option value="2/2569">2/2569</option>
-              <option value="1/2568">1/2568</option>
-              <option value="2/2568">2/2568</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-gray-700 text-xs font-bold mb-1">เดือนที่บันทึกข้อมูล</label>
-            <select id="recordMonth" class="w-full px-2 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs font-bold bg-gray-50 text-blue-900">
-              <option value="มกราคม">มกราคม</option>
-              <option value="กุมภาพันธ์">กุมภาพันธ์</option>
-              <option value="มีนาคม">มีนาคม</option>
-              <option value="เมษายน">เมษายน</option>
-              <option value="พฤษภาคม">พฤษภาคม</option>
-              <option value="มิถุนายน">มิถุนายน</option>
-              <option value="กรกฎาคม">กรกฎาคม</option>
-              <option value="สิงหาคม">สิงหาคม</option>
-              <option value="กันยายน">กันยายน</option>
-              <option value="ตุลาคม">ตุลาคม</option>
-              <option value="พฤศจิกายน">พฤศจิกายน</option>
-              <option value="ธันวาคม">ธันวาคม</option>
-            </select>
-          </div>
         </div>
 
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-200 text-sm">
@@ -76,15 +47,37 @@
   </div>
 
 <script>
-    // หมายเหตุ: URL นี้จะถูกเรียกใช้ชั่วคราวตามโครงสร้างแอปเดิมของคุณครู
-    const GAS_WEB_APP_URL = ScriptApp.getService().getUrl();
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzTh56DQWZ5J2pcrUFFgv9qF_vYISHAooCny1JADySXvtZv_AZ2NXyiJ82eIv3rncTcZQ/exec";
+
+    // ฟังก์ชันตรวจสอบสิทธิ์ช่วงวันที่ 16-สิ้นเดือน และคำนวณข้อมูลเวลาอัตโนมัติ
+    function getSystemPeriod() {
+      const now = new Date();
+      const date = now.getDate();
+      
+      // ตรวจสอบเงื่อนไขข้อจำกัดวันที่ 16 ถึง วันสุดท้ายของเดือน
+      if (date < 16) {
+        return { allowed: false };
+      }
+      
+      const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+      const monthName = months[now.getMonth()];
+      
+      const currentYearBE = now.getFullYear() + 543;
+      let term = "";
+      const m = now.getMonth(); // 0 = ม.ค., 11 = ธ.ค.
+      
+      // คำนวณภาคเรียนอัตโนมัติ (พฤษภาคม - ตุลาคม = เทอม 1 | พฤศจิกายน - เมษายน = เทอม 2)
+      if (m >= 4 && m <= 9) {
+        term = "1/" + currentYearBE;
+      } else {
+        const termYear = (m <= 3) ? currentYearBE - 1 : currentYearBE;
+        term = "2/" + termYear;
+      }
+      
+      return { allowed: true, term: term, month: monthName };
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
-      // ตรวจสอบและตั้งค่าล่วงหน้าเป็นเดือนปัจจุบันเพื่อความสะดวกในการใช้งาน
-      const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-      const currentMonthName = months[new Date().getMonth()];
-      document.getElementById('recordMonth').value = currentMonthName;
-      
       checkLocalSession(); 
     });
 
@@ -92,10 +85,14 @@
       const storedUser = localStorage.getItem("weightRecordUser");
       if (storedUser) {
         try {
-          const u = JSON.parse(storedUser);
-          const term = document.getElementById('term').value;
-          const month = document.getElementById('recordMonth').value;
+          const period = getSystemPeriod();
+          // หากไม่อยู่ในช่วงวันที่กำหนด ให้ล้างระบบล็อกอินอัตโนมัติเพื่อป้องกันการแอบบันทึกข้อมูล خارج เวลา
+          if (!period.allowed) {
+            localStorage.removeItem("weightRecordUser");
+            return;
+          }
 
+          const u = JSON.parse(storedUser);
           const response = await fetch(GAS_WEB_APP_URL, {
             method: 'POST', 
             body: JSON.stringify({ action: "login", username: u.username, password: u.password }),
@@ -103,12 +100,12 @@
           });
           const result = await response.json();
           if (result.status === "success") {
-            window.location.href = `${GAS_WEB_APP_URL}?page=students&room=${encodeURIComponent(result.teacherRoom)}&tname=${encodeURIComponent(result.teacherName)}&term=${encodeURIComponent(term)}&month=${encodeURIComponent(month)}`;
+            window.location.href = `${GAS_WEB_APP_URL}?page=students&room=${encodeURIComponent(result.teacherRoom)}&tname=${encodeURIComponent(result.teacherName)}&term=${encodeURIComponent(period.term)}&month=${encodeURIComponent(period.month)}`;
           } else {
             localStorage.removeItem("weightRecordUser");
           }
         } catch (error) { 
-           // ปล่อยผ่านหากเซสชันหมดอายุหรือยังไม่ได้ล็อกอิน
+           // ปล่อยผ่านเงียบๆ
         }
       }
     }
@@ -116,10 +113,15 @@
     async function handleLogin() {
       const user = document.getElementById("username").value.trim();
       const pass = document.getElementById("password").value.trim();
-      const term = document.getElementById('term').value;
-      const month = document.getElementById('recordMonth').value;
 
       if(!user || !pass) { Swal.fire("แจ้งเตือน", "กรุณากรอกข้อมูลให้ครบถ้วน", "warning"); return; }
+
+      // ตรวจสอบเงื่อนไขข้อจำกัดเวลาบันทึกข้อมูลก่อนทำรายการเข้าสู่ระบบ
+      const period = getSystemPeriod();
+      if (!period.allowed) {
+        Swal.fire("ปฏิเสธการเข้าถึง", "ระบบเปิดให้บันทึกข้อมูลเฉพาะในช่วงวันที่ 16 ถึงวันสุดท้ายของเดือนเท่านั้นครับ", "warning");
+        return;
+      }
 
       try {
         const response = await fetch(GAS_WEB_APP_URL, {
@@ -131,7 +133,7 @@
         if (result.status === "success") {
           localStorage.setItem("weightRecordUser", JSON.stringify({username: user, password: pass}));
           Swal.fire({ title: 'สำเร็จ!', text: 'เข้าสู่ระบบเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => {
-              window.location.href = `${GAS_WEB_APP_URL}?page=students&room=${encodeURIComponent(result.teacherRoom)}&tname=${encodeURIComponent(result.teacherName)}&term=${encodeURIComponent(term)}&month=${encodeURIComponent(month)}`;
+              window.location.href = `${GAS_WEB_APP_URL}?page=students&room=${encodeURIComponent(result.teacherRoom)}&tname=${encodeURIComponent(result.teacherName)}&term=${encodeURIComponent(period.term)}&month=${encodeURIComponent(period.month)}`;
           });
         } else { Swal.fire("ข้อผิดพลาด", result.message, "error"); }
       } catch (error) { Swal.fire("ข้อผิดพลาด", "เชื่อมต่อฐานข้อมูลไม่สำเร็จ", "error"); }
