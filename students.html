@@ -159,6 +159,7 @@
 
             document.getElementById('totalCount').innerText = total;
             document.getElementById('recordedCount').innerText = recorded;
+            document.getElementById('progressPercent').innerText = percent + "%"; // อัปเดตตัวเลขเปอร์เซ็นต์
             document.getElementById('progressBar').style.width = percent + "%";
         }
 
@@ -305,8 +306,11 @@
                     // ปรับยอด Progress แบบบ้านๆ โดยนับกล่องเขียว
                     const total = document.getElementById('totalCount').innerText;
                     const greenCards = document.querySelectorAll('.border-green-400').length;
+                    const newPercent = Math.round((greenCards / total) * 100);
+                    
                     document.getElementById('recordedCount').innerText = greenCards;
-                    document.getElementById('progressBar').style.width = Math.round((greenCards / total) * 100) + "%";
+                    document.getElementById('progressPercent').innerText = newPercent + "%"; // อัปเดตตัวเลขเปอร์เซ็นต์แบบ Real-time
+                    document.getElementById('progressBar').style.width = newPercent + "%";
                 } else {
                     Swal.fire('ล้มเหลว', json.message, 'error');
                     btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> บันทึก';
