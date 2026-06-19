@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard ค่าดัชนีมวลกาย (BMI) นักเรียน</title>
+    <title>Dashboard ดัชนีมวลกาย</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,12 +14,12 @@
         .stat-card { background: white; border-radius: 1rem; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #f3f4f6; }
         .section-header { font-size: 1.125rem; font-weight: 700; color: #1e3a8a; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; margin-bottom: 1rem; }
         
-        /* สีกำหนดสำหรับกลุ่ม BMI */
-        .color-thin { color: #3b82f6; } .bg-thin { background-color: #3b82f6; }
-        .color-normal { color: #22c55e; } .bg-normal { background-color: #22c55e; }
-        .color-chubby { color: #f59e0b; } .bg-chubby { background-color: #f59e0b; }
-        .color-fat { color: #ef4444; } .bg-fat { background-color: #ef4444; }
-        .color-obese { color: #b91c1c; } .bg-obese { background-color: #b91c1c; }
+        .color-thin { color: #2563eb; } .bg-thin { background-color: #2563eb; } /* ผอม - น้ำเงิน */
+        .color-slthin { color: #60a5fa; } .bg-slthin { background-color: #60a5fa; } /* ค่อนข้างผอม - ฟ้า */
+        .color-normal { color: #22c55e; } .bg-normal { background-color: #22c55e; } /* สมส่วน - เขียว */
+        .color-chubby { color: #facc15; } .bg-chubby { background-color: #facc15; color: #000; } /* ท้วม - เหลือง */
+        .color-startfat { color: #f97316; } .bg-startfat { background-color: #f97316; } /* เริ่มอ้วน - ส้ม */
+        .color-fat { color: #ef4444; } .bg-fat { background-color: #ef4444; } /* อ้วน - แดง */
     </style>
 </head>
 <body class="pb-20 text-gray-800">
@@ -29,37 +29,25 @@
             <div class="flex items-center gap-4 w-full md:w-auto">
                 <img src="https://img2.pic.in.th/4d3a830f3eb506411.png" class="w-12 h-12 bg-white rounded-full p-1 shadow">
                 <div>
-                    <h1 class="text-xl font-bold leading-tight">Dashboard ค่าดัชนีมวลกาย (BMI)</h1>
-                    <p class="text-sm text-blue-200">ระบบบันทึกน้ำหนักส่วนสูงนักเรียน</p>
+                    <h1 class="text-xl font-bold leading-tight">Dashboard ดัชนีมวลกาย</h1>
+                    <p class="text-sm text-blue-200">ตามเกณฑ์ส่วนสูง-น้ำหนัก กรมอนามัย</p>
                 </div>
             </div>
             
             <div class="flex flex-wrap gap-2 w-full md:w-auto bg-white bg-opacity-20 p-2 rounded-xl backdrop-blur-sm">
                 <select id="filterGrade" onchange="applyGradeFilter()" class="px-3 py-2 rounded-lg text-sm text-blue-900 font-bold outline-none cursor-pointer w-full md:w-auto">
                     <option value="all">-- ทุกระดับชั้น --</option>
-                    <option value="อ.1">อนุบาล 1</option>
-                    <option value="อ.2">อนุบาล 2</option>
-                    <option value="อ.3">อนุบาล 3</option>
-                    <option value="ป.1">ประถมศึกษาปีที่ 1</option>
-                    <option value="ป.2">ประถมศึกษาปีที่ 2</option>
-                    <option value="ป.3">ประถมศึกษาปีที่ 3</option>
-                    <option value="ป.4">ประถมศึกษาปีที่ 4</option>
-                    <option value="ป.5">ประถมศึกษาปีที่ 5</option>
-                    <option value="ป.6">ประถมศึกษาปีที่ 6</option>
+                    <option value="อ.1">อนุบาล 1</option> <option value="อ.2">อนุบาล 2</option> <option value="อ.3">อนุบาล 3</option>
+                    <option value="ป.1">ป.1</option> <option value="ป.2">ป.2</option> <option value="ป.3">ป.3</option>
+                    <option value="ป.4">ป.4</option> <option value="ป.5">ป.5</option> <option value="ป.6">ป.6</option>
                 </select>
-
                 <select id="filterTerm" class="px-3 py-2 rounded-lg text-sm text-blue-900 font-bold outline-none cursor-pointer w-full md:w-auto">
-                    <option value="1/2569">ภาคเรียน 1/2569</option>
-                    <option value="2/2569">ภาคเรียน 2/2569</option>
-                    <option value="1/2568">ภาคเรียน 1/2568</option>
+                    <option value="1/2569">ภาคเรียน 1/2569</option> <option value="2/2569">ภาคเรียน 2/2569</option> <option value="1/2568">ภาคเรียน 1/2568</option>
                 </select>
                 <select id="filterMonth" class="px-3 py-2 rounded-lg text-sm text-blue-900 font-bold outline-none cursor-pointer w-full md:w-auto">
-                    <option value="มกราคม">มกราคม</option> <option value="กุมภาพันธ์">กุมภาพันธ์</option>
-                    <option value="มีนาคม">มีนาคม</option> <option value="เมษายน">เมษายน</option>
-                    <option value="พฤษภาคม">พฤษภาคม</option> <option value="มิถุนายน">มิถุนายน</option>
-                    <option value="กรกฎาคม">กรกฎาคม</option> <option value="สิงหาคม">สิงหาคม</option>
-                    <option value="กันยายน">กันยายน</option> <option value="ตุลาคม">ตุลาคม</option>
-                    <option value="พฤศจิกายน">พฤศจิกายน</option> <option value="ธันวาคม">ธันวาคม</option>
+                    <option value="มกราคม">มกราคม</option> <option value="กุมภาพันธ์">กุมภาพันธ์</option> <option value="มีนาคม">มีนาคม</option> <option value="เมษายน">เมษายน</option>
+                    <option value="พฤษภาคม">พฤษภาคม</option> <option value="มิถุนายน">มิถุนายน</option> <option value="กรกฎาคม">กรกฎาคม</option> <option value="สิงหาคม">สิงหาคม</option>
+                    <option value="กันยายน">กันยายน</option> <option value="ตุลาคม">ตุลาคม</option> <option value="พฤศจิกายน">พฤศจิกายน</option> <option value="ธันวาคม">ธันวาคม</option>
                 </select>
                 <button onclick="fetchDashboardData()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-bold shadow transition shrink-0"><i class="fa-solid fa-search"></i></button>
             </div>
@@ -67,7 +55,6 @@
     </div>
 
     <div class="max-w-5xl mx-auto px-4 space-y-6">
-        
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="stat-card flex flex-col justify-center items-center text-center">
                 <h2 class="text-sm font-bold text-gray-500 uppercase mb-2">ความคืบหน้าการบันทึกข้อมูล</h2>
@@ -81,17 +68,16 @@
             </div>
 
             <div class="stat-card">
-                <h2 class="text-sm font-bold text-gray-500 uppercase text-center mb-4">สถานะค่าดัชนีมวลกาย (BMI) (ภาพรวม)</h2>
+                <h2 class="text-sm font-bold text-gray-500 uppercase text-center mb-4">สถานะดัชนีมวลกาย (ภาพรวม)</h2>
                 <div class="relative h-48 w-full mb-4">
                     <canvas id="overallPieChart"></canvas>
                 </div>
-                <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs font-bold text-gray-600" id="pieLegends">
-                    </div>
+                <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs font-bold text-gray-600" id="pieLegends"></div>
             </div>
         </div>
 
         <div class="stat-card">
-            <h2 class="section-header"><i class="fa-solid fa-venus-mars"></i> เปรียบเทียบค่าดัชนีมวลกาย (BMI) แยกตามเพศ</h2>
+            <h2 class="section-header"><i class="fa-solid fa-venus-mars"></i> เปรียบเทียบดัชนีมวลกายแยกตามเพศ</h2>
             <div class="relative h-64 w-full">
                 <canvas id="genderBarChart"></canvas>
             </div>
@@ -101,23 +87,22 @@
             <h2 class="section-header"><i class="fa-solid fa-school"></i> ข้อมูลจำแนกตามห้องเรียน</h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left whitespace-nowrap">
-                    <thead class="text-xs text-gray-700 uppercase bg-blue-50 border-b-2 border-blue-200">
+                    <thead class="text-[11px] text-gray-700 uppercase bg-blue-50 border-b-2 border-blue-200">
                         <tr>
-                            <th class="px-4 py-3 rounded-tl-lg">ห้องเรียน</th>
-                            <th class="px-4 py-3 text-center">การบันทึก (%)</th>
-                            <th class="px-4 py-3 text-center" title="น้ำหนักน้อย/ผอม"><span class="bg-thin text-white px-2 py-0.5 rounded text-[10px]">ผอม</span></th>
-                            <th class="px-4 py-3 text-center" title="ปกติ/สมส่วน"><span class="bg-normal text-white px-2 py-0.5 rounded text-[10px]">ปกติ</span></th>
-                            <th class="px-4 py-3 text-center" title="ท้วม/เริ่มอ้วน"><span class="bg-chubby text-white px-2 py-0.5 rounded text-[10px]">ท้วม</span></th>
-                            <th class="px-4 py-3 text-center" title="อ้วน"><span class="bg-fat text-white px-2 py-0.5 rounded text-[10px]">อ้วน</span></th>
-                            <th class="px-4 py-3 text-center rounded-tr-lg" title="อ้วนมาก"><span class="bg-obese text-white px-2 py-0.5 rounded text-[10px]">อ้วนมาก</span></th>
+                            <th class="px-2 py-3 rounded-tl-lg">ห้องเรียน</th>
+                            <th class="px-2 py-3 text-center">การบันทึก (%)</th>
+                            <th class="px-2 py-3 text-center"><span class="bg-thin text-white px-2 py-0.5 rounded">ผอม</span></th>
+                            <th class="px-2 py-3 text-center"><span class="bg-slthin text-white px-2 py-0.5 rounded">ค่อนข้างผอม</span></th>
+                            <th class="px-2 py-3 text-center"><span class="bg-normal text-white px-2 py-0.5 rounded">สมส่วน</span></th>
+                            <th class="px-2 py-3 text-center"><span class="bg-chubby px-2 py-0.5 rounded">ท้วม</span></th>
+                            <th class="px-2 py-3 text-center"><span class="bg-startfat text-white px-2 py-0.5 rounded">เริ่มอ้วน</span></th>
+                            <th class="px-2 py-3 text-center rounded-tr-lg"><span class="bg-fat text-white px-2 py-0.5 rounded">อ้วน</span></th>
                         </tr>
                     </thead>
-                    <tbody id="roomTableBody" class="divide-y divide-gray-100">
-                        </tbody>
+                    <tbody id="roomTableBody" class="divide-y divide-gray-100"></tbody>
                 </table>
             </div>
         </div>
-
     </div>
 
     <script>
@@ -126,7 +111,9 @@
         let globalDashboardData = null; 
         let pieChartInstance = null;
         let barChartInstance = null;
-        const bmiColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#b91c1c'];
+        // สีสำหรับ 6 ระดับ (ผอม -> อ้วน)
+        const bmiColors = ['#2563eb', '#60a5fa', '#22c55e', '#facc15', '#f97316', '#ef4444'];
+        const labelNames = ['ผอม', 'ค่อนข้างผอม', 'สมส่วน', 'ท้วม', 'เริ่มอ้วน', 'อ้วน'];
 
         document.addEventListener("DOMContentLoaded", () => {
             const now = new Date();
@@ -144,47 +131,30 @@
         function fetchDashboardData() {
             const term = document.getElementById('filterTerm').value;
             const month = document.getElementById('filterMonth').value;
-
             Swal.fire({ title: 'กำลังวิเคราะห์ข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
-            
-            fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "getBMIDashboardData", term: term, month: month }),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            })
+            fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getBMIDashboardData", term: term, month: month }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } })
             .then(res => res.json())
             .then(result => {
                 Swal.close();
-                if (result.status === 'success') {
-                    globalDashboardData = result; 
-                    applyGradeFilter(); 
-                } else {
-                    Swal.fire('ข้อผิดพลาด', result.message, 'error');
-                }
-            }).catch(err => { 
-                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
-            });
+                if (result.status === 'success') { globalDashboardData = result; applyGradeFilter(); } 
+                else { Swal.fire('ข้อผิดพลาด', result.message, 'error'); }
+            }).catch(err => { Swal.fire('Error', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error'); });
         }
 
         function applyGradeFilter() {
             if (!globalDashboardData) return;
-            
             const grade = document.getElementById('filterGrade').value;
             const data = globalDashboardData;
 
             if (grade === "all") {
-                renderOverall(data);
-                renderGenderBarChart(data.genderBMI);
-                renderRoomTable(data.roomStats);
-                return;
+                renderOverall(data); renderGenderBarChart(data.genderBMI); renderRoomTable(data.roomStats); return;
             }
 
-            let aggTotalStudents = 0;
-            let aggRecordedTotal = 0;
-            let aggOverallBMI = { "ผอม": 0, "ปกติ": 0, "ท้วม": 0, "อ้วน": 0, "อ้วนมาก": 0 };
+            let aggTotalStudents = 0; let aggRecordedTotal = 0;
+            let aggOverallBMI = { "ผอม": 0, "ค่อนข้างผอม": 0, "สมส่วน": 0, "ท้วม": 0, "เริ่มอ้วน": 0, "อ้วน": 0 };
             let aggGenderBMI = {
-                "ชาย": { "ผอม": 0, "ปกติ": 0, "ท้วม": 0, "อ้วน": 0, "อ้วนมาก": 0 },
-                "หญิง": { "ผอม": 0, "ปกติ": 0, "ท้วม": 0, "อ้วน": 0, "อ้วนมาก": 0 }
+                "ชาย": { "ผอม": 0, "ค่อนข้างผอม": 0, "สมส่วน": 0, "ท้วม": 0, "เริ่มอ้วน": 0, "อ้วน": 0 },
+                "หญิง": { "ผอม": 0, "ค่อนข้างผอม": 0, "สมส่วน": 0, "ท้วม": 0, "เริ่มอ้วน": 0, "อ้วน": 0 }
             };
             let filteredRoomStats = {};
 
@@ -193,25 +163,15 @@
                     filteredRoomStats[room] = data.roomStats[room];
                     aggTotalStudents += data.roomStats[room].total;
                     aggRecordedTotal += data.roomStats[room].recorded;
-
                     const rBmi = data.roomStats[room].bmi;
                     for (let k in rBmi) aggOverallBMI[k] += rBmi[k];
-
                     const gBmi = data.roomStats[room].genderBMI;
                     for (let k in gBmi["ชาย"]) aggGenderBMI["ชาย"][k] += gBmi["ชาย"][k];
                     for (let k in gBmi["หญิง"]) aggGenderBMI["หญิง"][k] += gBmi["หญิง"][k];
                 }
             }
-
-            let filteredData = {
-                totalStudents: aggTotalStudents,
-                recordedTotal: aggRecordedTotal,
-                overallBMI: aggOverallBMI
-            };
-
-            renderOverall(filteredData);
-            renderGenderBarChart(aggGenderBMI);
-            renderRoomTable(filteredRoomStats);
+            let filteredData = { totalStudents: aggTotalStudents, recordedTotal: aggRecordedTotal, overallBMI: aggOverallBMI };
+            renderOverall(filteredData); renderGenderBarChart(aggGenderBMI); renderRoomTable(filteredRoomStats);
         }
 
         function renderOverall(data) {
@@ -222,37 +182,24 @@
             document.getElementById('overallProgressBar').style.width = percent + "%";
 
             const bmi = data.overallBMI;
-            const dataset = [bmi["ผอม"], bmi["ปกติ"], bmi["ท้วม"], bmi["อ้วน"], bmi["อ้วนมาก"]];
+            const dataset = [bmi["ผอม"], bmi["ค่อนข้างผอม"], bmi["สมส่วน"], bmi["ท้วม"], bmi["เริ่มอ้วน"], bmi["อ้วน"]];
             
             const ctx = document.getElementById('overallPieChart').getContext('2d');
             if(pieChartInstance) pieChartInstance.destroy();
-            
             pieChartInstance = new Chart(ctx, {
                 type: 'doughnut',
-                data: {
-                    labels: ['ผอม', 'ปกติ', 'ท้วม', 'อ้วน', 'อ้วนมาก'],
-                    datasets: [{
-                        data: dataset,
-                        backgroundColor: bmiColors,
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    cutout: '65%',
-                    animation: { animateScale: true }
-                }
+                data: { labels: labelNames, datasets: [{ data: dataset, backgroundColor: bmiColors, borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '65%' }
             });
 
             const calcP = (val) => data.recordedTotal > 0 ? ((val/data.recordedTotal)*100).toFixed(2) : "0.00";
             document.getElementById('pieLegends').innerHTML = `
                 <div class="flex items-center"><div class="w-3 h-3 bg-thin rounded-full mr-1"></div>ผอม: ${dataset[0]} (${calcP(dataset[0])}%)</div>
-                <div class="flex items-center"><div class="w-3 h-3 bg-normal rounded-full mr-1"></div>ปกติ: ${dataset[1]} (${calcP(dataset[1])}%)</div>
-                <div class="flex items-center"><div class="w-3 h-3 bg-chubby rounded-full mr-1"></div>ท้วม: ${dataset[2]} (${calcP(dataset[2])}%)</div>
-                <div class="flex items-center"><div class="w-3 h-3 bg-fat rounded-full mr-1"></div>อ้วน: ${dataset[3]} (${calcP(dataset[3])}%)</div>
-                <div class="flex items-center"><div class="w-3 h-3 bg-obese rounded-full mr-1"></div>อ้วนมาก: ${dataset[4]} (${calcP(dataset[4])}%)</div>
+                <div class="flex items-center"><div class="w-3 h-3 bg-slthin rounded-full mr-1"></div>ค่อนข้างผอม: ${dataset[1]} (${calcP(dataset[1])}%)</div>
+                <div class="flex items-center"><div class="w-3 h-3 bg-normal rounded-full mr-1"></div>สมส่วน: ${dataset[2]} (${calcP(dataset[2])}%)</div>
+                <div class="flex items-center"><div class="w-3 h-3 bg-chubby rounded-full mr-1"></div>ท้วม: ${dataset[3]} (${calcP(dataset[3])}%)</div>
+                <div class="flex items-center"><div class="w-3 h-3 bg-startfat rounded-full mr-1"></div>เริ่มอ้วน: ${dataset[4]} (${calcP(dataset[4])}%)</div>
+                <div class="flex items-center"><div class="w-3 h-3 bg-fat rounded-full mr-1"></div>อ้วน: ${dataset[5]} (${calcP(dataset[5])}%)</div>
             `;
         }
 
@@ -260,63 +207,51 @@
             const ctx = document.getElementById('genderBarChart').getContext('2d');
             if(barChartInstance) barChartInstance.destroy();
 
-            const labels = ['ผอม', 'ปกติ', 'ท้วม', 'อ้วน', 'อ้วนมาก'];
-            const maleData = [genderData["ชาย"]["ผอม"], genderData["ชาย"]["ปกติ"], genderData["ชาย"]["ท้วม"], genderData["ชาย"]["อ้วน"], genderData["ชาย"]["อ้วนมาก"]];
-            const femaleData = [genderData["หญิง"]["ผอม"], genderData["หญิง"]["ปกติ"], genderData["หญิง"]["ท้วม"], genderData["หญิง"]["อ้วน"], genderData["หญิง"]["อ้วนมาก"]];
+            const maleData = labelNames.map(k => genderData["ชาย"][k]);
+            const femaleData = labelNames.map(k => genderData["หญิง"][k]);
 
             barChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: labelNames,
                     datasets: [
                         { label: 'นักเรียนชาย', data: maleData, backgroundColor: '#60a5fa', borderRadius: 4 },
                         { label: 'นักเรียนหญิง', data: femaleData, backgroundColor: '#f472b6', borderRadius: 4 }
                     ]
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { font: { family: 'Sarabun', weight: 'bold' } } }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        x: { grid: { display: false } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { family: 'Sarabun', weight: 'bold' } } } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } }
             });
         }
 
         function renderRoomTable(roomStats) {
             const tbody = document.getElementById('roomTableBody');
             tbody.innerHTML = '';
-            
             const sortedRooms = Object.keys(roomStats).sort();
 
             if (sortedRooms.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-gray-400 font-bold">ไม่พบข้อมูลห้องเรียนในระดับชั้นนี้</td></tr>`;
-                return;
+                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-gray-400 font-bold">ไม่พบข้อมูลห้องเรียนในระดับชั้นนี้</td></tr>`; return;
             }
 
             sortedRooms.forEach(room => {
                 const stat = roomStats[room];
                 const percent = stat.total > 0 ? ((stat.recorded / stat.total) * 100).toFixed(2) : "0.00";
-                
                 const bmi = stat.bmi;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-bold text-gray-800">${room}</td>
-                    <td class="px-4 py-3 text-center">
+                    <td class="px-2 py-3 font-bold text-gray-800">${room}</td>
+                    <td class="px-2 py-3 text-center">
                         <div class="flex items-center justify-center gap-2" title="${stat.recorded} / ${stat.total} คน">
                             <div class="w-16 bg-gray-200 rounded-full h-2 overflow-hidden"><div class="bg-blue-500 h-full" style="width: ${percent}%"></div></div>
                             <span class="text-xs font-bold ${parseFloat(percent) === 100 ? 'text-green-600' : 'text-gray-500'}">${percent}%</span>
                         </div>
                     </td>
-                    <td class="px-4 py-3 text-center font-bold color-thin">${bmi["ผอม"] > 0 ? bmi["ผอม"] : '-'}</td>
-                    <td class="px-4 py-3 text-center font-bold color-normal">${bmi["ปกติ"] > 0 ? bmi["ปกติ"] : '-'}</td>
-                    <td class="px-4 py-3 text-center font-bold color-chubby">${bmi["ท้วม"] > 0 ? bmi["ท้วม"] : '-'}</td>
-                    <td class="px-4 py-3 text-center font-bold color-fat">${bmi["อ้วน"] > 0 ? bmi["อ้วน"] : '-'}</td>
-                    <td class="px-4 py-3 text-center font-bold color-obese">${bmi["อ้วนมาก"] > 0 ? bmi["อ้วนมาก"] : '-'}</td>
+                    <td class="px-2 py-3 text-center font-bold color-thin">${bmi["ผอม"] > 0 ? bmi["ผอม"] : '-'}</td>
+                    <td class="px-2 py-3 text-center font-bold color-slthin">${bmi["ค่อนข้างผอม"] > 0 ? bmi["ค่อนข้างผอม"] : '-'}</td>
+                    <td class="px-2 py-3 text-center font-bold color-normal">${bmi["สมส่วน"] > 0 ? bmi["สมส่วน"] : '-'}</td>
+                    <td class="px-2 py-3 text-center font-bold color-chubby">${bmi["ท้วม"] > 0 ? bmi["ท้วม"] : '-'}</td>
+                    <td class="px-2 py-3 text-center font-bold color-startfat">${bmi["เริ่มอ้วน"] > 0 ? bmi["เริ่มอ้วน"] : '-'}</td>
+                    <td class="px-2 py-3 text-center font-bold color-fat">${bmi["อ้วน"] > 0 ? bmi["อ้วน"] : '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
