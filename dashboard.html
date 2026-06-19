@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard ภาวะโภชนาการนักเรียน</title>
+    <title>Dashboard ค่าดัชนีมวลกาย (BMI) นักเรียน</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -29,7 +29,7 @@
             <div class="flex items-center gap-4 w-full md:w-auto">
                 <img src="https://img2.pic.in.th/4d3a830f3eb506411.png" class="w-12 h-12 bg-white rounded-full p-1 shadow">
                 <div>
-                    <h1 class="text-xl font-bold leading-tight">Dashboard ภาวะโภชนาการ</h1>
+                    <h1 class="text-xl font-bold leading-tight">Dashboard ค่าดัชนีมวลกาย (BMI)</h1>
                     <p class="text-sm text-blue-200">ระบบบันทึกน้ำหนักส่วนสูงนักเรียน</p>
                 </div>
             </div>
@@ -81,7 +81,7 @@
             </div>
 
             <div class="stat-card">
-                <h2 class="text-sm font-bold text-gray-500 uppercase text-center mb-4">สถานะภาวะโภชนาการ (ภาพรวม)</h2>
+                <h2 class="text-sm font-bold text-gray-500 uppercase text-center mb-4">สถานะค่าดัชนีมวลกาย (BMI) (ภาพรวม)</h2>
                 <div class="relative h-48 w-full mb-4">
                     <canvas id="overallPieChart"></canvas>
                 </div>
@@ -91,7 +91,7 @@
         </div>
 
         <div class="stat-card">
-            <h2 class="section-header"><i class="fa-solid fa-venus-mars"></i> เปรียบเทียบภาวะโภชนาการแยกตามเพศ</h2>
+            <h2 class="section-header"><i class="fa-solid fa-venus-mars"></i> เปรียบเทียบค่าดัชนีมวลกาย (BMI) แยกตามเพศ</h2>
             <div class="relative h-64 w-full">
                 <canvas id="genderBarChart"></canvas>
             </div>
@@ -123,7 +123,7 @@
     <script>
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzTh56DQWZ5J2pcrUFFgv9qF_vYISHAooCny1JADySXvtZv_AZ2NXyiJ82eIv3rncTcZQ/exec";
         
-        let globalDashboardData = null; // ตัวแปรเก็บข้อมูลทั้งหมดเพื่อใช้กรอง
+        let globalDashboardData = null; 
         let pieChartInstance = null;
         let barChartInstance = null;
         const bmiColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#b91c1c'];
@@ -156,8 +156,8 @@
             .then(result => {
                 Swal.close();
                 if (result.status === 'success') {
-                    globalDashboardData = result; // บันทึกข้อมูลตั้งต้นไว้
-                    applyGradeFilter(); // เรียกใช้ฟังก์ชันกรองข้อมูล
+                    globalDashboardData = result; 
+                    applyGradeFilter(); 
                 } else {
                     Swal.fire('ข้อผิดพลาด', result.message, 'error');
                 }
@@ -166,14 +166,12 @@
             });
         }
 
-        // ฟังก์ชันกรองข้อมูลรายชั้นเรียน
         function applyGradeFilter() {
             if (!globalDashboardData) return;
             
             const grade = document.getElementById('filterGrade').value;
             const data = globalDashboardData;
 
-            // ถ้าเลือกทุกระดับชั้น ส่งข้อมูลดั้งเดิมไปแสดงผล
             if (grade === "all") {
                 renderOverall(data);
                 renderGenderBarChart(data.genderBMI);
@@ -181,7 +179,6 @@
                 return;
             }
 
-            // ถ้าเลือกระดับชั้น จะทำการรวบรวมข้อมูลใหม่เฉพาะชั้นนั้น
             let aggTotalStudents = 0;
             let aggRecordedTotal = 0;
             let aggOverallBMI = { "ผอม": 0, "ปกติ": 0, "ท้วม": 0, "อ้วน": 0, "อ้วนมาก": 0 };
@@ -192,7 +189,6 @@
             let filteredRoomStats = {};
 
             for (let room in data.roomStats) {
-                // ตรวจสอบว่าชื่อห้องขึ้นต้นด้วยชั้นที่เลือกหรือไม่ (เช่น "ป.6/1" เริ่มต้นด้วย "ป.6")
                 if (room.startsWith(grade)) {
                     filteredRoomStats[room] = data.roomStats[room];
                     aggTotalStudents += data.roomStats[room].total;
