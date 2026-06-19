@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>รายชื่อนักเรียน - ระบบน้ำหนักส่วนสูง</title>
+    <title>รายชื่อนักเรียน - ระบบดัชนีมวลกาย</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -13,8 +13,6 @@
         .input-mini { text-align: center; font-weight: bold; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; width: 100%; outline: none; transition: all 0.2s; }
         .input-mini:focus:not(:read-only) { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
         .input-mini:read-only { background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; border-color: #e5e7eb; }
-        
-        /* Modal Styles */
         .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
         .modal-content { transition: transform 0.3s ease-out; transform: translateY(100%); }
         .modal-open .modal-content { transform: translateY(0); }
@@ -35,7 +33,7 @@
                 <button onclick="handleLogout()" class="text-[10px] font-bold bg-white text-blue-700 px-3 py-1.5 rounded-full shadow hover:bg-blue-50 transition">ออกจากระบบ</button>
             </div>
             <div class="mt-4 bg-white bg-opacity-20 p-3 rounded-xl border border-white border-opacity-30 backdrop-blur-sm text-center">
-                <h2 class="text-lg font-bold">บันทึกน้ำหนักส่วนสูงนักเรียน</h2>
+                <h2 class="text-lg font-bold">บันทึกข้อมูลน้ำหนัก/ส่วนสูง</h2>
             </div>
         </div>
 
@@ -59,12 +57,11 @@
             </div>
         </div>
 
-        <!-- แถบความคืบหน้า -->
         <div class="px-4 mt-3 relative z-20">
             <div class="bg-white p-4 rounded-2xl shadow border border-gray-100 text-center">
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">ความคืบหน้าการบันทึกข้อมูล</p>
                 <div class="my-1 flex items-baseline justify-center space-x-2">
-                    <span id="progressPercent" class="text-5xl font-black text-blue-600 tracking-tighter">0%</span>
+                    <span id="progressPercent" class="text-5xl font-black text-blue-600 tracking-tighter">0.00%</span>
                 </div>
                 <p class="text-[11px] font-medium text-gray-500 mb-3 border-b border-gray-50 pb-3">
                     บันทึกแล้ว <span id="recordedCount" class="font-bold text-gray-800 text-sm">0</span> จาก <span id="totalCount" class="font-bold text-gray-800 text-sm">0</span> คน
@@ -87,8 +84,7 @@
                 </div>
                 <button onclick="closeHistoryModal()" class="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-bold hover:bg-gray-300"><i class="fa-solid fa-times"></i></button>
             </div>
-            <div id="historyContainer" class="p-4 overflow-y-auto flex-1 bg-gray-100 space-y-3">
-                </div>
+            <div id="historyContainer" class="p-4 overflow-y-auto flex-1 bg-gray-100 space-y-3"></div>
         </div>
     </div>
 
@@ -100,6 +96,7 @@
         let globalTerm = "";
         let globalMonth = "";
         let isReadOnly = false;
+        let globalThaiRef = null; // เก็บตารางอ้างอิงกรมอนามัย
 
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -113,14 +110,12 @@
             document.getElementById('list-teacher-profile').innerText = `${globalTeacherName} (ห้อง ${globalTeacherRoom})`;
             document.getElementById('record-period').innerText = `เดือน${globalMonth} (ภาคเรียน ${globalTerm})`;
 
-
-
             fetchStudents();
         });
 
         function fetchStudents() {
             const container = document.getElementById('studentListContainer');
-            container.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold"><i class="fa-solid fa-spinner fa-spin text-3xl mb-2"></i><br>กำลังโหลดข้อมูลนักเรียน...</div>';
+            container.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold"><i class="fa-solid fa-spinner fa-spin text-3xl mb-2"></i><br>กำลังโหลดข้อมูล...</div>';
 
             fetch(GAS_WEB_APP_URL, {
                 method: 'POST',
@@ -130,22 +125,18 @@
             .then(res => res.json())
             .then(result => {
                 if (result.status === 'success') { 
-                    // ตรวจสอบสิทธิ์ผู้ดูแลระบบ
+                    globalThaiRef = result.thaiRef; // รับค่าตารางอ้างอิง
                     if (globalTeacherName === "นายพีระศิน ไชยศร") {
                         document.getElementById('adminPanel').classList.remove('hidden');
                         document.getElementById('overrideToggle').checked = result.override;
                     }
 
-                    // ตรวจสอบวันที่เพื่อทำ Read-only (แต่ถ้า override ถูกเปิดอยู่ให้ข้ามการล็อก)
                     const today = new Date().getDate();
                     if (today < 16 && !result.override) {
-                        isReadOnly = true;
-                        document.getElementById('readonlyBanner').classList.remove('hidden');
+                        isReadOnly = true; document.getElementById('readonlyBanner').classList.remove('hidden');
                     } else {
-                        isReadOnly = false;
-                        document.getElementById('readonlyBanner').classList.add('hidden');
+                        isReadOnly = false; document.getElementById('readonlyBanner').classList.add('hidden');
                     }
-
                     renderStudentList(result.data); 
                 } 
                 else { Swal.fire('ข้อผิดพลาด', result.message, 'error'); }
@@ -155,11 +146,11 @@
         function updateProgress(students) {
             const total = students.length;
             const recorded = students.filter(s => s.isRecorded).length; 
-            const percent = total > 0 ? Math.round((recorded / total) * 100) : 0;
+            const percent = total > 0 ? ((recorded / total) * 100).toFixed(2) : "0.00";
 
             document.getElementById('totalCount').innerText = total;
             document.getElementById('recordedCount').innerText = recorded;
-            document.getElementById('progressPercent').innerText = percent + "%"; // อัปเดตตัวเลขเปอร์เซ็นต์
+            document.getElementById('progressPercent').innerText = percent + "%"; 
             document.getElementById('progressBar').style.width = percent + "%";
         }
 
@@ -176,14 +167,10 @@
             students.forEach(student => {
                 const isRec = student.isRecorded;
                 let borderClass = isRec ? "border-2 border-green-400" : "border border-gray-200";
-                let badgeHtml = isRec ? `<span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold ml-2">บันทึกแล้ว</span>` : '';
+                let badgeHtml = `<span id="badge_${student.sid}" class="${isRec ? '' : 'hidden'} bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold ml-2">บันทึกแล้ว</span>`;
                 
-                // คำนวณสี BMI เริ่มต้น
-                let resColor = "text-gray-500";
-                if(student.result.includes("ปกติ")) resColor = "text-green-600";
-                else if(student.result.includes("ผอม")) resColor = "text-blue-500";
-                else if(student.result.includes("ท้วม")) resColor = "text-amber-500";
-                else if(student.result.includes("อ้วน")) resColor = "text-red-500";
+                // คำนวณสี BMI
+                let resColor = getThaiColorClass(student.result);
 
                 const card = document.createElement("div");
                 card.className = `bg-white p-4 rounded-xl shadow-sm ${borderClass} relative`;
@@ -191,16 +178,15 @@
                 
                 const readonlyAttr = isReadOnly ? "readonly" : "";
                 const saveBtnClass = isReadOnly ? "hidden" : "flex";
-
-                // จัดการรูปโปรไฟล์ (ถ้าไม่มีข้อมูลในชีท ให้ใช้รูป Default และมีระบบดัก Error รูปเสีย)
                 const profileImg = student.photo ? student.photo : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
                 const imgBorder = isRec ? "border-green-400" : "border-gray-200";
 
                 card.innerHTML = `
+                    <input type="hidden" id="sex_${student.sid}" value="${student.sex}">
                     <div class="flex justify-between items-start border-b border-gray-100 pb-3 mb-3">
                         <div class="flex items-center gap-3">
                             <div class="relative">
-                                <img src="${profileImg}" alt="Profile" class="w-12 h-12 rounded-full object-cover border-2 ${imgBorder} shadow-sm" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                                <img id="img_${student.sid}" src="${profileImg}" class="w-12 h-12 rounded-full object-cover border-2 ${imgBorder} shadow-sm" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                                 <div class="absolute -bottom-1 -right-1 bg-blue-100 text-blue-700 border border-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-sm">${student.sno}</div>
                             </div>
                             <div>
@@ -230,7 +216,7 @@
                     </div>
 
                     <div class="mt-3 bg-gray-50 rounded-lg p-2 text-center border border-gray-100 flex justify-between items-center px-4">
-                        <div class="text-xs font-bold text-gray-600">BMI: <span id="bmi_${student.sid}" class="text-sm text-gray-900">${student.bmi || '-'}</span></div>
+                        <div class="text-xs font-bold text-gray-600">ค่า BMI: <span id="bmi_${student.sid}" class="text-sm text-gray-900">${student.bmi || '-'}</span></div>
                         <div id="res_${student.sid}" class="text-xs font-bold ${resColor}">${student.result || 'รอข้อมูล'}</div>
                     </div>
                 `;
@@ -238,30 +224,66 @@
             });
         }
 
+        // ฟังก์ชันแปลผลโดยใช้ตารางอ้างอิงของกรมอนามัย
         function previewBMI(sid) {
             let w = parseFloat(document.getElementById(`w_${sid}`).value);
             let h = parseFloat(document.getElementById(`h_${sid}`).value);
+            let sex = document.getElementById(`sex_${sid}`).value;
             let bmiEl = document.getElementById(`bmi_${sid}`);
             let resEl = document.getElementById(`res_${sid}`);
 
             if (w > 0 && h > 0) {
-                let bmi = (w / ((h / 100) * (h / 100))).toFixed(2);
-                bmiEl.innerText = bmi;
+                // คำนวณค่า BMI ตัวเลขไว้แสดงอ้างอิง
+                let bmiNum = (w / ((h / 100) * (h / 100))).toFixed(2);
+                bmiEl.innerText = bmiNum;
 
-                let resultTxt = ""; let resColor = "";
-                if (bmi < 18.5) { resultTxt = "น้ำหนักน้อย / ผอม"; resColor = "text-blue-500"; }
-                else if (bmi <= 22.9) { resultTxt = "ปกติ (สมส่วน)"; resColor = "text-green-600"; }
-                else if (bmi <= 24.9) { resultTxt = "ท้วม / เริ่มอ้วน"; resColor = "text-amber-500"; }
-                else if (bmi <= 29.9) { resultTxt = "อ้วน"; resColor = "text-red-500"; }
-                else { resultTxt = "อ้วนมาก"; resColor = "text-red-700"; }
-
+                // การเทียบตาราง น้ำหนักตามเกณฑ์ส่วนสูง กรมอนามัย
+                let resultTxt = "ไม่อยู่ในเกณฑ์ตาราง";
+                let resColor = "text-gray-500";
+                
+                if (globalThaiRef && globalThaiRef[sex]) {
+                    // ปัดเศษส่วนสูงให้ตรงกับ Index ในตาราง (ทีละ 0.5 ซม.)
+                    let hRoundNum = Math.round(h * 2) / 2;
+                    let hStr = hRoundNum.toFixed(1); 
+                    
+                    let refLevels = globalThaiRef[sex][hStr];
+                    if (refLevels) {
+                        let matchedLevel = 3; // ค่าตั้งต้น (สมส่วน)
+                        for(let l of refLevels) {
+                            let lvlCode = l[0], wMin = l[1], wMax = l[2];
+                            // ถ้าน้ำหนักอยู่ในช่วงนี้พอดี (แต่ถ้าเกินตาราง เราจะใช้ค่าขอบสุด)
+                            if (w >= wMin && w <= wMax) { matchedLevel = lvlCode; break; }
+                            if (lvlCode === 6 && w > wMax) { matchedLevel = 6; } // น้ำหนักหลุดสเกลบน (อ้วนเกินเพดานตาราง)
+                            if (lvlCode === 1 && w < wMin) { matchedLevel = 1; } // น้ำหนักหลุดสเกลล่าง (ผอมเกินพื้นตาราง)
+                        }
+                        
+                        // แปลรหัส Level เป็นข้อความ 6 ระดับ
+                        if(matchedLevel === 1) resultTxt = "ผอม";
+                        else if(matchedLevel === 2) resultTxt = "ค่อนข้างผอม";
+                        else if(matchedLevel === 3) resultTxt = "สมส่วน";
+                        else if(matchedLevel === 4) resultTxt = "ท้วม";
+                        else if(matchedLevel === 5) resultTxt = "เริ่มอ้วน";
+                        else if(matchedLevel === 6) resultTxt = "อ้วน";
+                    }
+                }
+                
                 resEl.innerText = resultTxt;
-                resEl.className = `text-xs font-bold ${resColor}`;
+                resEl.className = `text-xs font-bold ${getThaiColorClass(resultTxt)}`;
             } else {
-                bmiEl.innerText = "-";
-                resEl.innerText = "รอข้อมูล";
-                resEl.className = "text-xs font-bold text-gray-500";
+                bmiEl.innerText = "-"; resEl.innerText = "รอข้อมูล"; resEl.className = "text-xs font-bold text-gray-500";
             }
+        }
+
+        // จัดการสีของข้อความ 6 ระดับ
+        function getThaiColorClass(resTxt) {
+            if (!resTxt) return "text-gray-500";
+            if (resTxt.includes("ค่อนข้างผอม")) return "text-blue-400";
+            if (resTxt.includes("ผอม")) return "text-blue-600";
+            if (resTxt.includes("สมส่วน") || resTxt.includes("ปกติ")) return "text-green-600";
+            if (resTxt.includes("ท้วม")) return "text-amber-500";
+            if (resTxt.includes("เริ่มอ้วน")) return "text-orange-500";
+            if (resTxt.includes("อ้วน")) return "text-red-600";
+            return "text-gray-500";
         }
 
         async function saveData(sid, sno, fullname) {
@@ -271,88 +293,77 @@
 
             if(!w || !h) { Swal.fire('แจ้งเตือน', 'กรุณากรอกน้ำหนักและส่วนสูงให้ครบ', 'warning'); return; }
 
-            previewBMI(sid); // คำนวณทิ้งไว้ให้ชัวร์
+            previewBMI(sid); 
             const bmi = document.getElementById(`bmi_${sid}`).innerText;
             const result = document.getElementById(`res_${sid}`).innerText;
 
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
             try {
-                const payload = {
-                    action: "saveRecord", term: globalTerm, month: globalMonth, room: globalTeacherRoom,
-                    sid: sid, sno: sno, fullname: fullname, weight: w, height: h, bmi: bmi, result: result
-                };
+                const payload = { action: "saveRecord", term: globalTerm, month: globalMonth, room: globalTeacherRoom, sid: sid, sno: sno, fullname: fullname, weight: w, height: h, bmi: bmi, result: result };
                 const res = await fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
                 const json = await res.json();
                 
                 if (json.status === 'success') {
-                    // เปลี่ยนกรอบเป็นสีเขียว
                     const card = document.getElementById(`card_${sid}`);
-                    card.classList.remove('border-gray-200'); card.classList.add('border-green-400', 'border-2');
+                    const badge = document.getElementById(`badge_${sid}`);
+                    const img = document.getElementById(`img_${sid}`);
                     
-                    // กระพริบปุ่มสีเขียว
-                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    btn.classList.add('bg-green-500');
-                    btn.innerHTML = '<i class="fa-solid fa-check"></i> สำเร็จ';
+                    card.classList.remove('border-gray-200'); card.classList.add('border-green-400', 'border-2');
+                    if (badge) badge.classList.remove('hidden');
+                    if (img) { img.classList.remove('border-gray-200'); img.classList.add('border-green-400'); }
+                    
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'bg-gray-500');
+                    btn.classList.add('bg-green-500'); btn.innerHTML = '<i class="fa-solid fa-check"></i> สำเร็จ';
                     
                     setTimeout(() => {
-                        btn.disabled = false;
-                        btn.classList.remove('bg-green-500');
-                        btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                        btn.innerHTML = '<i class="fa-solid fa-save"></i> บันทึก';
+                        btn.disabled = false; btn.classList.remove('bg-green-500'); btn.classList.add('bg-blue-600', 'hover:bg-blue-700'); btn.innerHTML = '<i class="fa-solid fa-save"></i> บันทึก';
                     }, 2000);
                     
-                    // ปรับยอด Progress แบบบ้านๆ โดยนับกล่องเขียว
-                    const total = document.getElementById('totalCount').innerText;
+                    const total = parseInt(document.getElementById('totalCount').innerText);
                     const greenCards = document.querySelectorAll('.border-green-400').length;
-                    const newPercent = Math.round((greenCards / total) * 100);
+                    const newPercent = total > 0 ? ((greenCards / total) * 100).toFixed(2) : "0.00";
                     
                     document.getElementById('recordedCount').innerText = greenCards;
-                    document.getElementById('progressPercent').innerText = newPercent + "%"; // อัปเดตตัวเลขเปอร์เซ็นต์แบบ Real-time
+                    document.getElementById('progressPercent').innerText = newPercent + "%"; 
                     document.getElementById('progressBar').style.width = newPercent + "%";
                 } else {
-                    Swal.fire('ล้มเหลว', json.message, 'error');
-                    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> บันทึก';
+                    Swal.fire('ล้มเหลว', json.message, 'error'); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> บันทึก';
                 }
             } catch (error) { 
-                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error'); 
-                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> บันทึก';
+                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error'); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> บันทึก';
             } 
         }
 
-        // --- ระบบ Modal ดูประวัติ ---
+        async function handleToggleOverride() {
+            const toggle = document.getElementById('overrideToggle');
+            const state = toggle.checked; toggle.disabled = true;
+            try {
+                const res = await fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "toggleOverride", teacherName: globalTeacherName, state: state }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    Swal.fire({ icon: 'success', title: state ? 'เปิดระบบสำเร็จ' : 'ปิดระบบสำเร็จ', timer: 1500, showConfirmButton: false }).then(() => { fetchStudents(); });
+                } else {
+                    Swal.fire('ข้อผิดพลาด', result.message, 'error'); toggle.checked = !state;
+                }
+            } catch(e) { Swal.fire('Error', 'ไม่สามารถเชื่อมต่อได้', 'error'); toggle.checked = !state; } finally { toggle.disabled = false; }
+        }
+
         const modal = document.getElementById('historyModal');
         const historyContainer = document.getElementById('historyContainer');
 
         function openHistoryModal(sid, fullname) {
             document.getElementById('modalStudentName').innerText = fullname;
             historyContainer.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><br>กำลังดึงข้อมูล...</div>';
-            
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.add('modal-open'), 10); // หน่วงเวลาให้ CSS Transition ทำงาน
-
-            fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "getStudentHistory", sid: sid }),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            })
+            modal.classList.remove('hidden'); setTimeout(() => modal.classList.add('modal-open'), 10); 
+            fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getStudentHistory", sid: sid }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } })
             .then(res => res.json())
             .then(result => {
                 if (result.status === 'success') {
-                    if(result.data.length === 0) {
-                        historyContainer.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold">ไม่พบประวัติการบันทึกข้อมูล</div>';
-                        return;
-                    }
-
+                    if(result.data.length === 0) { historyContainer.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold">ไม่พบประวัติการบันทึกข้อมูล</div>'; return; }
                     let html = '';
                     result.data.forEach(rec => {
-                        let resColor = "text-gray-500";
-                        if(rec.result.includes("ปกติ")) resColor = "text-green-600";
-                        else if(rec.result.includes("ผอม")) resColor = "text-blue-500";
-                        else if(rec.result.includes("ท้วม")) resColor = "text-amber-500";
-                        else if(rec.result.includes("อ้วน")) resColor = "text-red-500";
-
+                        let resColor = getThaiColorClass(rec.result);
                         html += `
                             <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-200">
                                 <div class="flex justify-between items-center border-b pb-2 mb-2">
@@ -371,57 +382,13 @@
                         `;
                     });
                     historyContainer.innerHTML = html;
-                } else {
-                    historyContainer.innerHTML = `<div class="text-center text-red-500 py-4">${result.message}</div>`;
-                }
+                } else { historyContainer.innerHTML = `<div class="text-center text-red-500 py-4">${result.message}</div>`; }
             })
             .catch(err => { historyContainer.innerHTML = '<div class="text-center text-red-500 py-4">เชื่อมต่อล้มเหลว</div>'; });
         }
 
-        function closeHistoryModal() {
-            modal.classList.remove('modal-open');
-            setTimeout(() => modal.classList.add('hidden'), 300); // รอ animation จบ
-        }
-
-async function handleToggleOverride() {
-            const toggle = document.getElementById('overrideToggle');
-            const state = toggle.checked;
-            toggle.disabled = true;
-            
-            try {
-                const res = await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "toggleOverride", teacherName: globalTeacherName, state: state }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                });
-                const result = await res.json();
-                
-                if (result.status === 'success') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: state ? 'เปิดระบบสำเร็จ' : 'ปิดระบบสำเร็จ',
-                        text: state ? 'ผู้ใช้ทุกคนสามารถบันทึกข้อมูลได้แล้ว' : 'ระบบกลับสู่โหมดเวลาปกติ',
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        fetchStudents(); // โหลดข้อมูลรายชื่อใหม่เพื่อปลดล็อกฟอร์มทันที
-                    });
-                } else {
-                    Swal.fire('ข้อผิดพลาด', result.message, 'error');
-                    toggle.checked = !state;
-                }
-            } catch(e) {
-                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อได้', 'error');
-                toggle.checked = !state;
-            } finally {
-                toggle.disabled = false;
-            }
-        }
-        
-        function handleLogout() {
-            localStorage.removeItem("weightRecordUser");
-            window.location.href = 'index.html';
-        }
+        function closeHistoryModal() { modal.classList.remove('modal-open'); setTimeout(() => modal.classList.add('hidden'), 300); }
+        function handleLogout() { localStorage.removeItem("weightRecordUser"); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>
