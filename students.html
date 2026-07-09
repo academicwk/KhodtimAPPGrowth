@@ -16,6 +16,18 @@
         .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
         .modal-content { transition: transform 0.3s ease-out; transform: translateY(100%); }
         .modal-open .modal-content { transform: translateY(0); }
+
+        /* แอนิเมชันป้ายนับถอยหลังแบบพับ */
+        .flip-wrapper { display: flex; gap: 8px; justify-content: center; }
+        .flip-unit { display: flex; flex-direction: column; align-items: center; }
+        .flip-card { 
+            width: 50px; height: 70px; background: #1f2937; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 35px; font-weight: bold; border-radius: 6px;
+            position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.5s ease-in-out;
+        }
+        .is-flipping { transform: rotateX(180deg); }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -37,27 +49,53 @@
             </div>
         </div>
 
-        <div id="readonlyBanner" class="hidden px-4 mt-3">
-            <div class="bg-amber-100 border border-amber-300 text-amber-800 p-3 rounded-xl shadow-sm text-center">
-                <p class="text-sm font-bold"><i class="fa-solid fa-lock text-amber-600"></i> โหมดอ่านอย่างเดียว</p>
-                <p class="text-xs mt-1">ระบบเปิดให้บันทึกข้อมูลเฉพาะวันที่ 16 ถึง วันสุดท้ายของเดือน</p>
+        <div id="countdownContainer" class="px-4 mt-5 flex flex-col items-center relative z-20 hidden">
+            <span class="text-xs font-bold text-gray-500 mb-3 tracking-wide">เหลือเวลาบันทึกข้อมูลอีก</span>
+            <div class="flip-wrapper">
+                <div class="flip-unit"><div class="flip-card" id="d-card">00</div><span class="text-[10px] text-gray-500 mt-2 font-bold">วัน</span></div>
+                <div class="flip-unit"><div class="flip-card" id="h-card">00</div><span class="text-[10px] text-gray-500 mt-2 font-bold">ชม.</span></div>
+                <div class="flip-unit"><div class="flip-card" id="m-card">00</div><span class="text-[10px] text-gray-500 mt-2 font-bold">นาที</span></div>
+                <div class="flip-unit"><div class="flip-card" id="s-card">00</div><span class="text-[10px] text-gray-500 mt-2 font-bold">วินาที</span></div>
             </div>
         </div>
 
-        <div id="adminPanel" class="hidden px-4 mt-3">
+        <div id="readonlyBanner" class="hidden px-4 mt-3">
+            <div class="bg-amber-100 border border-amber-300 text-amber-800 p-3 rounded-xl shadow-sm text-center">
+                <p class="text-sm font-bold"><i class="fa-solid fa-lock text-amber-600"></i> โหมดอ่านอย่างเดียว</p>
+                <p class="text-xs mt-1" id="readonlyText">ระบบอยู่นอกช่วงเวลาเปิดรับข้อมูล</p>
+            </div>
+        </div> 
+
+        <div id="adminPanel" class="hidden px-4 mt-3 space-y-2">
             <div class="bg-purple-100 border border-purple-300 p-3 rounded-xl shadow-sm flex justify-between items-center">
                 <div>
                     <p class="text-sm font-bold text-purple-800"><i class="fa-solid fa-unlock-keyhole"></i> เปิดระบบกรณีพิเศษ</p>
                     <p class="text-[10px] text-purple-600">อนุญาตให้ทุกคนบันทึกข้อมูลนอกเวลาได้</p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="overrideToggle" class="sr-only peer" onchange="handleToggleOverride()">
+                    <input type="checkbox" id="overrideToggle" class="sr-only peer" onchange="handleSaveAdminConfig()">
                     <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
             </div>
+            
+            <div class="bg-purple-50 border border-purple-200 p-3 rounded-xl shadow-sm">
+                <p class="text-sm font-bold text-purple-800 mb-2"><i class="fa-solid fa-calendar-days"></i> กำหนดวันเปิด-ปิดระบบ (ประจำเดือน)</p>
+                <div class="flex items-center gap-2">
+                    <div class="flex-1">
+                        <label class="text-[10px] text-purple-600 font-bold block text-center mb-1">วันที่เริ่ม</label>
+                        <input type="number" id="sysStartDay" min="1" max="31" class="w-full text-center rounded-lg border border-purple-200 text-sm py-1.5 font-bold text-purple-700 outline-none focus:ring-2 focus:ring-purple-400">
+                    </div>
+                    <span class="text-purple-400 font-bold mt-4">-</span>
+                    <div class="flex-1">
+                        <label class="text-[10px] text-purple-600 font-bold block text-center mb-1">วันที่สิ้นสุด</label>
+                        <input type="number" id="sysEndDay" min="1" max="31" class="w-full text-center rounded-lg border border-purple-200 text-sm py-1.5 font-bold text-purple-700 outline-none focus:ring-2 focus:ring-purple-400">
+                    </div>
+                    <button onclick="handleSaveAdminConfig()" class="mt-4 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition flex items-center justify-center"><i class="fa-solid fa-save"></i> บันทึก</button>
+                </div>
+            </div>
         </div>
 
-        <div class="px-4 mt-3 relative z-20">
+        <div class="px-4 mt-4 relative z-20">
             <div class="bg-white p-4 rounded-2xl shadow border border-gray-100 text-center">
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">ความคืบหน้าการบันทึกข้อมูล</p>
                 <div class="my-1 flex items-baseline justify-center space-x-2">
@@ -96,7 +134,9 @@
         let globalTerm = "";
         let globalMonth = "";
         let isReadOnly = false;
-        let globalThaiRef = null; // เก็บตารางอ้างอิงกรมอนามัย
+        let globalThaiRef = null; 
+        
+        let countdownInterval;
 
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -113,6 +153,39 @@
             fetchStudents();
         });
 
+        // ฟังก์ชันนับเวลาถอยหลัง (นับไปจนถึงวันที่สิ้นสุดของเดือน)
+        function startCountdown(endDay) {
+            if(countdownInterval) clearInterval(countdownInterval);
+            document.getElementById('countdownContainer').classList.remove('hidden');
+            
+            const updateFlip = (id, newVal) => {
+                const el = document.getElementById(`${id}-card`);
+                if (el.innerText !== newVal) {
+                    el.classList.add('is-flipping');
+                    setTimeout(() => {
+                        el.innerText = newVal;
+                        el.classList.remove('is-flipping');
+                    }, 250); 
+                }
+            };
+
+            countdownInterval = setInterval(() => {
+                const now = new Date();
+                // ตั้งเป้าเวลาเป็นวันที่ endDay เวลา 23:59:59 ของเดือนปัจจุบัน
+                let target = new Date(now.getFullYear(), now.getMonth(), endDay, 23, 59, 59);
+                
+                let diff = target - now;
+                if (diff < 0) { diff = 0; } // หมดเวลา
+
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+                const h = Math.floor((diff / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
+                const m = Math.floor((diff / 1000 / 60) % 60).toString().padStart(2, '0');
+                const s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
+
+                updateFlip('d', d); updateFlip('h', h); updateFlip('m', m); updateFlip('s', s);
+            }, 1000);
+        }
+
         function fetchStudents() {
             const container = document.getElementById('studentListContainer');
             container.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold"><i class="fa-solid fa-spinner fa-spin text-3xl mb-2"></i><br>กำลังโหลดข้อมูล...</div>';
@@ -125,18 +198,29 @@
             .then(res => res.json())
             .then(result => {
                 if (result.status === 'success') { 
-                    globalThaiRef = result.thaiRef; // รับค่าตารางอ้างอิง
-                    if (globalTeacherName === "นายพีระศิน ไชยศร") {
+                    globalThaiRef = result.thaiRef; 
+                    
+                    // แสดงแผงควบคุมหากเป็นแอดมิน
+                    if (globalTeacherName === "นายพีระศิน ไชยศร" || globalTeacherName === "พีระศิน ไชยศร") {
                         document.getElementById('adminPanel').classList.remove('hidden');
                         document.getElementById('overrideToggle').checked = result.override;
+                        document.getElementById('sysStartDay').value = result.startDay;
+                        document.getElementById('sysEndDay').value = result.endDay;
                     }
 
+                    // ล็อกเวลาการกรอกด้วยวันที่ ที่ตั้งค่าไว้จากระบบ
                     const today = new Date().getDate();
-                    if (today < 16 && !result.override) {
-                        isReadOnly = true; document.getElementById('readonlyBanner').classList.remove('hidden');
+                    if ((today < result.startDay || today > result.endDay) && !result.override) {
+                        isReadOnly = true; 
+                        document.getElementById('readonlyBanner').classList.remove('hidden');
+                        document.getElementById('readonlyText').innerText = `ระบบเปิดให้บันทึกข้อมูลเฉพาะวันที่ ${result.startDay} ถึง ${result.endDay} ของเดือนเท่านั้น`;
+                        document.getElementById('countdownContainer').classList.add('hidden'); // ซ่อนเวลานับถอยหลัง
                     } else {
-                        isReadOnly = false; document.getElementById('readonlyBanner').classList.add('hidden');
+                        isReadOnly = false; 
+                        document.getElementById('readonlyBanner').classList.add('hidden');
+                        startCountdown(result.endDay); // เริ่มนับถอยหลังไปหาวันปิดระบบ
                     }
+
                     renderStudentList(result.data); 
                 } 
                 else { Swal.fire('ข้อผิดพลาด', result.message, 'error'); }
@@ -169,17 +253,15 @@
                 let borderClass = isRec ? "border-2 border-green-400" : "border border-gray-200";
                 let badgeHtml = `<span id="badge_${student.sid}" class="${isRec ? '' : 'hidden'} bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold ml-2">บันทึกแล้ว</span>`;
                 
-                // คำนวณสี BMI
                 let resColor = getThaiColorClass(student.result);
-
-                const card = document.createElement("div");
-                card.className = `bg-white p-4 rounded-xl shadow-sm ${borderClass} relative`;
-                card.id = `card_${student.sid}`;
-                
                 const readonlyAttr = isReadOnly ? "readonly" : "";
                 const saveBtnClass = isReadOnly ? "hidden" : "flex";
                 const profileImg = student.photo ? student.photo : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
                 const imgBorder = isRec ? "border-green-400" : "border-gray-200";
+
+                const card = document.createElement("div");
+                card.className = `bg-white p-4 rounded-xl shadow-sm ${borderClass} relative`;
+                card.id = `card_${student.sid}`;
 
                 card.innerHTML = `
                     <input type="hidden" id="sex_${student.sid}" value="${student.sex}">
@@ -224,7 +306,6 @@
             });
         }
 
-        // ฟังก์ชันแปลผลโดยใช้ตารางอ้างอิงของกรมอนามัย
         function previewBMI(sid) {
             let w = parseFloat(document.getElementById(`w_${sid}`).value);
             let h = parseFloat(document.getElementById(`h_${sid}`).value);
@@ -233,31 +314,26 @@
             let resEl = document.getElementById(`res_${sid}`);
 
             if (w > 0 && h > 0) {
-                // คำนวณค่า BMI ตัวเลขไว้แสดงอ้างอิง
                 let bmiNum = (w / ((h / 100) * (h / 100))).toFixed(2);
                 bmiEl.innerText = bmiNum;
 
-                // การเทียบตาราง น้ำหนักตามเกณฑ์ส่วนสูง กรมอนามัย
                 let resultTxt = "ไม่อยู่ในเกณฑ์ตาราง";
                 let resColor = "text-gray-500";
                 
                 if (globalThaiRef && globalThaiRef[sex]) {
-                    // ปัดเศษส่วนสูงให้ตรงกับ Index ในตาราง (ทีละ 0.5 ซม.)
                     let hRoundNum = Math.round(h * 2) / 2;
                     let hStr = hRoundNum.toFixed(1); 
                     
                     let refLevels = globalThaiRef[sex][hStr];
                     if (refLevels) {
-                        let matchedLevel = 3; // ค่าตั้งต้น (สมส่วน)
+                        let matchedLevel = 3; 
                         for(let l of refLevels) {
                             let lvlCode = l[0], wMin = l[1], wMax = l[2];
-                            // ถ้าน้ำหนักอยู่ในช่วงนี้พอดี (แต่ถ้าเกินตาราง เราจะใช้ค่าขอบสุด)
                             if (w >= wMin && w <= wMax) { matchedLevel = lvlCode; break; }
-                            if (lvlCode === 6 && w > wMax) { matchedLevel = 6; } // น้ำหนักหลุดสเกลบน (อ้วนเกินเพดานตาราง)
-                            if (lvlCode === 1 && w < wMin) { matchedLevel = 1; } // น้ำหนักหลุดสเกลล่าง (ผอมเกินพื้นตาราง)
+                            if (lvlCode === 6 && w > wMax) { matchedLevel = 6; } 
+                            if (lvlCode === 1 && w < wMin) { matchedLevel = 1; } 
                         }
                         
-                        // แปลรหัส Level เป็นข้อความ 6 ระดับ
                         if(matchedLevel === 1) resultTxt = "ผอม";
                         else if(matchedLevel === 2) resultTxt = "ค่อนข้างผอม";
                         else if(matchedLevel === 3) resultTxt = "สมส่วน";
@@ -274,7 +350,6 @@
             }
         }
 
-        // จัดการสีของข้อความ 6 ระดับ
         function getThaiColorClass(resTxt) {
             if (!resTxt) return "text-gray-500";
             if (resTxt.includes("ค่อนข้างผอม")) return "text-blue-400";
@@ -335,18 +410,38 @@
             } 
         }
 
-        async function handleToggleOverride() {
+        // ฟังก์ชันสำหรับแอดมิน (บันทึกการตั้งค่าวันที่ + สวิตช์ฉุกเฉิน)
+        async function handleSaveAdminConfig() {
             const toggle = document.getElementById('overrideToggle');
-            const state = toggle.checked; toggle.disabled = true;
+            const startD = document.getElementById('sysStartDay').value;
+            const endD = document.getElementById('sysEndDay').value;
+            const state = toggle.checked;
+            
+            toggle.disabled = true;
+            
             try {
-                const res = await fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "toggleOverride", teacherName: globalTeacherName, state: state }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                const res = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "saveSystemConfig", teacherName: globalTeacherName, override: state, startDay: startD, endDay: endD }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
                 const result = await res.json();
+                
                 if (result.status === 'success') {
-                    Swal.fire({ icon: 'success', title: state ? 'เปิดระบบสำเร็จ' : 'ปิดระบบสำเร็จ', timer: 1500, showConfirmButton: false }).then(() => { fetchStudents(); });
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'บันทึกการตั้งค่าสำเร็จ',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => { fetchStudents(); });
                 } else {
-                    Swal.fire('ข้อผิดพลาด', result.message, 'error'); toggle.checked = !state;
+                    Swal.fire('ข้อผิดพลาด', result.message, 'error');
                 }
-            } catch(e) { Swal.fire('Error', 'ไม่สามารถเชื่อมต่อได้', 'error'); toggle.checked = !state; } finally { toggle.disabled = false; }
+            } catch(e) {
+                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อได้', 'error');
+            } finally {
+                toggle.disabled = false;
+            }
         }
 
         const modal = document.getElementById('historyModal');
