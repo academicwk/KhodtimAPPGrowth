@@ -327,11 +327,25 @@
                     let refLevels = globalThaiRef[sex][hStr];
                     if (refLevels) {
                         let matchedLevel = 3; 
+                        let foundExact = false;
+                        
+                        // 1. ลองหาช่วงที่น้ำหนักตกอยู่เป๊ะๆ ก่อน
                         for(let l of refLevels) {
                             let lvlCode = l[0], wMin = l[1], wMax = l[2];
-                            if (w >= wMin && w <= wMax) { matchedLevel = lvlCode; break; }
-                            if (lvlCode === 6 && w > wMax) { matchedLevel = 6; } 
-                            if (lvlCode === 1 && w < wMin) { matchedLevel = 1; } 
+                            if (w >= wMin && w <= wMax) { 
+                                matchedLevel = lvlCode; 
+                                foundExact = true;
+                                break; 
+                            }
+                        }
+                        
+                        // 2. ถ้าน้ำหนักไม่ตกในขอบเขตปกติ (อ้วนหลุดขอบบน หรือ ผอมหลุดขอบล่าง)
+                        if (!foundExact) {
+                            for(let l of refLevels) {
+                                let lvlCode = l[0], wMin = l[1], wMax = l[2];
+                                if (lvlCode === 6 && w > wMax) { matchedLevel = 6; break; } 
+                                if (lvlCode === 1 && w < wMin) { matchedLevel = 1; break; } 
+                            }
                         }
                         
                         if(matchedLevel === 1) resultTxt = "ผอม";
