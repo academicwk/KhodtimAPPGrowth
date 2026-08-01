@@ -321,28 +321,35 @@
                 let resColor = "text-gray-500";
                 
                 if (globalThaiRef && globalThaiRef[sex]) {
-                    let hRoundNum = Math.round(h * 2) / 2;
-                    // ล็อกส่วนสูงให้อยู่ในตาราง (45 - 185 ซม.)
-                    if (hRoundNum < 45) hRoundNum = 45.0;
-                    if (hRoundNum > 185) hRoundNum = 185.0;
-                    let hStr = hRoundNum.toFixed(1); 
+                    // ระบบใหม่: หาระยะส่วนสูงที่ "ใกล้เคียงที่สุด" ที่มีอยู่ในตารางจริง
+                    let closestHeightStr = "";
+                    let minHDiff = Infinity;
+                    for (let key in globalThaiRef[sex]) {
+                        let keyH = parseFloat(key);
+                        let diff = Math.abs(keyH - h);
+                        if (diff < minHDiff) {
+                            minHDiff = diff;
+                            closestHeightStr = key;
+                        }
+                    }
+                    let hStr = closestHeightStr;
                     
                     let refLevels = globalThaiRef[sex][hStr];
                     if (refLevels) {
                         let matchedLevel = 3; 
-                        let minDiff = Infinity;
+                        let minWDiff = Infinity;
                         
-                        // ระบบค้นหาช่วงที่ใกล้เคียงที่สุด 
+                        // ระบบค้นหาน้ำหนักที่ใกล้เคียงที่สุด 
                         for(let l of refLevels) {
                             let lvlCode = l[0], wMin = l[1], wMax = l[2];
                             if (w >= wMin && w <= wMax) { 
                                 matchedLevel = lvlCode; 
-                                minDiff = 0;
+                                minWDiff = 0;
                                 break; 
                             } else {
                                 let diff = Math.min(Math.abs(w - wMin), Math.abs(w - wMax));
-                                if (diff < minDiff) {
-                                    minDiff = diff;
+                                if (diff < minWDiff) {
+                                    minWDiff = diff;
                                     matchedLevel = lvlCode;
                                 }
                             }
