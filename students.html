@@ -322,29 +322,29 @@
                 
                 if (globalThaiRef && globalThaiRef[sex]) {
                     let hRoundNum = Math.round(h * 2) / 2;
+                    // ล็อกส่วนสูงให้อยู่ในตาราง (45 - 185 ซม.)
+                    if (hRoundNum < 45) hRoundNum = 45.0;
+                    if (hRoundNum > 185) hRoundNum = 185.0;
                     let hStr = hRoundNum.toFixed(1); 
                     
                     let refLevels = globalThaiRef[sex][hStr];
                     if (refLevels) {
                         let matchedLevel = 3; 
-                        let foundExact = false;
+                        let minDiff = Infinity;
                         
-                        // 1. ลองหาช่วงที่น้ำหนักตกอยู่เป๊ะๆ ก่อน
+                        // ระบบค้นหาช่วงที่ใกล้เคียงที่สุด 
                         for(let l of refLevels) {
                             let lvlCode = l[0], wMin = l[1], wMax = l[2];
                             if (w >= wMin && w <= wMax) { 
                                 matchedLevel = lvlCode; 
-                                foundExact = true;
+                                minDiff = 0;
                                 break; 
-                            }
-                        }
-                        
-                        // 2. ถ้าน้ำหนักไม่ตกในขอบเขตปกติ (อ้วนหลุดขอบบน หรือ ผอมหลุดขอบล่าง)
-                        if (!foundExact) {
-                            for(let l of refLevels) {
-                                let lvlCode = l[0], wMin = l[1], wMax = l[2];
-                                if (lvlCode === 6 && w > wMax) { matchedLevel = 6; break; } 
-                                if (lvlCode === 1 && w < wMin) { matchedLevel = 1; break; } 
+                            } else {
+                                let diff = Math.min(Math.abs(w - wMin), Math.abs(w - wMax));
+                                if (diff < minDiff) {
+                                    minDiff = diff;
+                                    matchedLevel = lvlCode;
+                                }
                             }
                         }
                         
